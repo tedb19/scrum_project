@@ -1,0 +1,11 @@
+django
+djangorestframework
+
+# Markdown is used by the browsable API views
+# to translate the docstrings into pages for
+# help when users are viewing the API data.
+Markdown
+
+# enable filter translation from the query
+# parameters to the ORM with django-filter
+django-filter
