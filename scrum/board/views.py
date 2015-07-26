@@ -1,3 +1,11 @@
-from django.shortcuts import render
+from rest_framework import viewsets
 
-# Create your views here.
+from .models import Sprint
+from .serializers import SprintSerializer
+
+
+class SprintViewSet(viewsets.ModelViewSet):
+    '''API endpoint for listing and creating sprints'''
+
+    queryset = Sprint.objects.order_by('end')
+    serializer_class = SprintSerializer
