@@ -1,4 +1,7 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
+from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
 from rest_framework.reverse import reverse
@@ -42,6 +45,24 @@ class SprintSerializer(serializers.ModelSerializer):
                 kwargs={'pk':obj.pk}, request=request),
             'tasks': reverse('task-list', request=request) + '?sprint={}'.format(obj.pk),
         }
+
+    '''
+    We need to prevent creation of sprints that have happened prior to the
+    current date and time. 
+    To handle this, we need to check the value of the end date submitted
+    by the client. 
+    Each serializer field has a validate_<field> hook that
+    is called to perform additional validations on the field. This
+    parallels the clean_<field> in Django’s forms.
+    This method raises a HTTP 400 Bad Request when the constraint is violated
+    '''
+    def validate_end(self, value):
+        new = self.instance is None
+        updated = not new and self.initial_data['end'] != self.instance.end
+        if(new or updated) and value < date.today():
+            msg = _('End date cannot be in the past.')
+            raise serializers.ValidationError(msg)
+        return attrs
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -90,6 +111,49 @@ class TaskSerializer(serializers.ModelSerializer):
                 kwargs={User.USERNAME_FIELD: obj.assigned}, request=request)
         return links
 
+    '''
+    getattr(object, name[, default])
+        Return the value of the named attribute of object. name must be a string.
+        If the string is the name of one of the object’s attributes, the result
+        is the value of that attribute. 
+        For example, getattr(x, 'foobar') is equivalent to x.foobar.
+        If the named attribute does not exist, default is returned if provided,
+        otherwise AttributeError is raised.
+
+    validate_sprint ensures that the sprint is not changed after the task is
+    completed and that tasks are not assigned to sprints that have already been
+    completed.
+    '''
+    def validate_sprint(self, value):
+        orig_task = getattr(self, 'instance', None)
+        orig_sprint = getattr(orig_task, 'sprint', None)
+        sprint = value
+        if (getattr(orig_sprint, 'id', None) != getattr(sprint,'id', None) and int(self.initial_data['status']) == Task.STATUS_DONE):
+            raise serializers.ValidationError(_('Cannot change the sprint of a completed task.'))
+        if getattr(sprint,'end', date.today()) < date.today():
+            raise serializers.ValidationError(_('Cannot assign tasks to past sprints.'))
+        return value
+
+    '''
+    Validating conditions that require more than one field is handled in the validate
+    method, which parallels the clean method for forms.
+
+    validate ensures that the combination of fields makes sense for the task.
+    '''
+    def validate(self, data):
+        sprint = data.get('sprint', None)
+        status = data.get('status', None)
+        started = data.get('started', None)
+        completed = data.get('completed', None)
+        if not sprint and status != Task.STATUS_TODO:
+            raise serializers.ValidationError(_('Backlog tasks must have "Not started" status'))
+        if started and status == Task.STATUS_TODO:
+            raise serializers.ValidationError(_('"Not Started" tasks cannot have a start date'))
+        if completed and status != Task.STATUS_DONE:
+            raise serializers.ValidationError(_('Completed date cannot be set for incomplete tasks'))
+        if status == Task.STATUS_DONE and not completed:
+            raise serializers.ValidationError(_('Completed tasks must have a completed date'))
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
