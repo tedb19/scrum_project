@@ -11,6 +11,7 @@ User = get_user_model()
 
 
 class SprintViewSet(viewsets.ModelViewSet):
+
     '''
     API endpoint for listing and creating sprints.
     This viewset automatically provides `list`, `create`, `retrieve`,
@@ -28,10 +29,11 @@ class SprintViewSet(viewsets.ModelViewSet):
     http://127.0.0.1:8000/api/sprints/?search=new
     '''
     search_fields = ('name',)
-    ordering_fields = ('end','name',)
+    ordering_fields = ('end', 'name',)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+
     '''API endpoint for listing and creating tasks'''
 
     queryset = Task.objects.all()
@@ -42,6 +44,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
+
     '''
     API endpoint for listing users.
     The ReadOnlyModelViewSet viewset automatically

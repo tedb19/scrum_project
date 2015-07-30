@@ -4,6 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class Sprint(models.Model):
+
     '''Development iteration period'''
 
     name = models.CharField(max_length=100, blank=True, default='')
@@ -13,7 +14,9 @@ class Sprint(models.Model):
     def __str__(self):
         return self.name or _('Sprint ending {0}').format(self.end)
 
+
 class Task(models.Model):
+
     '''Unit of work to be done for the sprint.'''
 
     STATUS_TODO = 1
@@ -31,9 +34,11 @@ class Task(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, default='')
     sprint = models.ForeignKey(Sprint, blank=True, null=True)
-    status = models.SmallIntegerField(choices=STATUS_CHOICES, default=STATUS_TODO)
+    status = models.SmallIntegerField(choices=STATUS_CHOICES,
+        default=STATUS_TODO)
     order = models.SmallIntegerField(default=0)
-    assigned = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    assigned = models.ForeignKey(settings.AUTH_USER_MODEL,
+        null=True, blank=True)
     started = models.DateField(blank=True, null=True)
     due = models.DateField(blank=True, null=True)
     completed = models.DateField(blank=True, null=True)

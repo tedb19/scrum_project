@@ -79,8 +79,10 @@ STATIC_URL = '/static/'
 '''
 The following are the django-rest-framework settings for
 view authentication, permissions, filtering and pagination.
-For more options checkout: http://www.django-rest-framework.org/api-guide/settings/
-''' 
+For more options checkout:
+http://www.django-rest-framework.org/api-guide/settings/
+'''
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
