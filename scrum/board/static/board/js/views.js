@@ -29,54 +29,18 @@
     });
 
     /*
-    * Both the HomepageView and LoginView now extend 
-    * from this base TemplateView, which cleans up 
-    * the repeated code.
+    * FormView is a generic form view which will 
+    * extend in all our views
     */
-    var HomepageView = TemplateView.extend({
-        templateName: '#home-template'
-    });
-
-    var LoginView = TemplateView.extend({
-        id: 'login',
-        templateName: '#login-template',
-        //add an inline Underscore.js template for displaying errors
-        errorTemplate: _.template('<span class="error"><%- msg %></span>'),
-        /*
-        * In backbonejs, Events are written in the format 
-        * {"event selector": "callback"}, and uses jQuery
-        * 'on' function.
-        * This event property listens for all submit events on
-        * any form element inside the LoginView’s element.
-        * When an event is triggered, it will execute the submit
-        * callback.
-        * This particular event can be read as 'on "submit" event 
-        * of "form" selector, execute the "submit" callback'
-        */
+    var FormView = TemplateView.extend({
         events: {
             'submit form': 'submit'
         },
-        submit: function (event) {
-            var data = {};
-            event.preventDefault();
-            this.form = $(event.currentTarget);
-            this.clearErrors();
-            data = {
-                username = $(':input[name ="username"]', this.form).val(),
-                password: $(':input[name="password"]', this.form).val()
-            };
-            //this is similar to a jQuery $.ajax call
-            $.post(app.apiLogin, data)
-                .success($.proxy(this.loginSuccess, this))
-                .fail($.proxy(this.loginFailure, this));
-        },
-        loginSuccess: function (data) {
-            app.session.save(data.token);
-            this.trigger('login', data.token);//trigger a login event
-        },
-        loginFailure: function (xhr, status, error){
-            var errors = xhr.responseJSON;
-            this.showErrors(errors);
+        //add an inline Underscore.js template for displaying errors
+        errorTemplate: _.template('<span class="error"><%- msg %></span>'),
+        //removes any existing errors from the form on each submission.
+        clearErrors: function () {
+            $('.error', this.form).remove();
         },
         /*
         * This loops over all the fields and errors in the response 
@@ -87,7 +51,7 @@
         showErrors: function (errors) {
             _.map(errors, function (fieldErrors, name){
                 var field = $(':input[name='+ name + ']', this.form),
-                    label = $('label[for='+ field.attr('id') + ']', this.form),
+                    label = $('label[for='+ field.attr('id') + ']', this.form);
 
                 if(label.length === 0){
                     label = $('label', this.form).first();
@@ -100,12 +64,95 @@
                 _.map(fieldErrors, appendError, this);
             }, this);
         },
-        //removes any existing errors from the form on each submission.
-        clearErrors: function () {
-            $('.error', this.form).remove();
+        /*
+        * serializeForm is a generic serialization
+        * of the form field values
+        */
+        serializeForm: function (form) {
+            return _.object(_.map(form.serializeArray(), function (item) {
+                // convert object to tuple of (name, value)
+                return [item.name, item.value];
+            }));
+        },
+        submit: function (event) {
+            event.preventDefault();
+            this.form = $(event.currentTarget);
+            this.clearErrors();
+        },
+        failure: function (xhr, status, error) {
+            var errors = xhr.responseJSON;
+            this.showErrors(errors);
+        },
+        done: function (event) {
+            if(event) {
+                event.preventDefault();
+            }
+            this.trigger('done');
+            this.remove();
         }
+
     });
 
+    /*
+    * Both the HomepageView and LoginView now extend 
+    * from this base TemplateView, which cleans up 
+    * the repeated code.
+    */
+    var HomepageView = TemplateView.extend({
+        templateName: '#home-template'
+    });
+
+    var LoginView = FormView.extend({
+        id: 'login',
+        templateName: '#login-template',
+        submit: function (event) {
+            /*
+            * The submit callback calls the original FormView submit 
+            * to prevent the submission and clear any errors.
+            * JavaScript doesn’t have a super call like Python.
+            * FormView.prototype.submit.apply is the effective equivalent
+            * to call the parent method.
+            */
+            FormView.prototype.submit.apply(this, arguments);
+            var data = {};
+            /*
+            * Instead of the username and password fields being 
+            * retrieved manually, the form data is serialized with
+            * the serializeForm helper.
+            */
+            data = this.serializeForm(this.form);
+            //this is similar to a jQuery $.ajax call
+            $.post(app.apiLogin, data)
+                .success($.proxy(this.loginSuccess, this))
+                .fail($.proxy(this.failure, this));
+        },
+        loginSuccess: function (data) {
+            app.session.save(data.token);
+            this.done();
+        }
+        
+    });
+
+
+    var HeaderView = TemplateView.extend({
+        /*
+        * The tagName makes the template render into a
+        * <header> element.
+        */
+        tagName: 'header',
+        templateName: '#header-template',
+        events: {
+            'click a.logout': 'logout',
+        },
+        getContext: function () {
+            return {authenticated: app.session.authenticated()};
+        },
+        logout: function (event) {
+            event.preventDefault();
+            app.session.delete();
+            window.location = '/';
+        }
+    });
     /*
     * The HomepageView and LoginView are added to the app.views dictionary
     * so that it can be used in other parts of the application,
@@ -113,5 +160,6 @@
     */
     app.views.HomepageView = HomepageView;
     app.views.LoginView = LoginView;
+    app.views.HeaderView = HeaderView;
 
 })(jQuery, Backbone, _, app);
