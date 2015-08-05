@@ -17,6 +17,7 @@
         */
         initialize: function () {
             this.template = _.template($(this.templateName).html());
+            this.woow = 'tempView variable';
         },
         render: function () {
             var context = this.getContext(),
@@ -99,7 +100,40 @@
     * the repeated code.
     */
     var HomepageView = TemplateView.extend({
-        templateName: '#home-template'
+        templateName: '#home-template',
+        initialize: function (options) {
+            var self = this;
+            /*
+            * The following brings in all the variables initialized
+            * in the parent object (TemplateView) to the HomepageView
+            * and changes 'this' context to the parent.
+            */
+            TemplateView.prototype.initialize.apply(this, arguments);
+            app.collections.ready.done(function () {
+                var end = new Date();
+                end.setDate(end.getDate() + 7);
+                end = end.toISOString().replace(/T.*/g, '');
+                app.sprints.fetch({
+                    //data: {end_min: end},
+                    /*
+                    * The $.proxy method takes an existing function and returns
+                    * a new one with the specified context.
+                    * $.proxy(function,context)
+                    * In the below case, we are calling the render function,
+                    * but as defined in the initialize function
+                    */
+                    success: $.proxy(self.render, self)
+                });
+            });
+        },
+        /*
+        * The template context now contains the current sprints from app.sprints. 
+        * This may be undefined if app.collections is not ready.
+        * In that case, the template will get a null value.
+        */
+        getContext: function () {
+            return {sprints: app.sprints || null};
+        }    
     });
 
     var LoginView = FormView.extend({
