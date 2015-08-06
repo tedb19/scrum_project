@@ -17,7 +17,7 @@
         */
         initialize: function () {
             this.template = _.template($(this.templateName).html());
-            this.woow = 'tempView variable';
+            
         },
         render: function () {
             var context = this.getContext(),
