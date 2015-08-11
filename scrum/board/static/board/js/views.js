@@ -90,17 +90,64 @@
             }
             this.trigger('done');
             this.remove();
+        },
+        /*
+        * This is needed because while the $.ajax failure callback
+        * has the response object as the first argument, 
+        * the Model.save has the model instance as the first argument
+        * and the response as the second.
+        */
+        modelFailure: function (model, xhr, options) {
+            var errors = xhr.responseJSON;
+            this.showErrors(errors);
         }
 
     });
 
+
+    var NewSprintView = FormView.extend({
+        templateName: '#new-sprint-template',
+        className: 'new-sprint',
+        /*
+        * In addition to the default submit event handler,
+        * which is handled by the FormView base, the view
+        * will also handle a cancel button
+        */
+        events: _.extend({
+            'click button.cancel': 'done'
+        }, FormView.prototype.events),
+        submit: function (event) {
+            var self = this,
+                attributes = {};
+            FormView.prototype.submit.apply(this, arguments);
+            attributes = this.serializeForm(this.form);
+            app.collections.ready.done(function () {
+                app.sprints.create(attributes, {
+                    wait: true,
+                    success: $.proxy(self.success, self),
+                    error: $.proxy(self.modelFailure, self)
+                });
+            });
+        },
+        success: function (model) {
+            this.done();
+            /*
+            * redirect to the detail route for the sprint
+            */
+            window.location.hash = '#sprint/' + model.get('id');
+        }
+    });
+
     /*
     * Both the HomepageView and LoginView now extend 
-    * from this base TemplateView, which cleans up 
+    * from the base TemplateView, which cleans up 
     * the repeated code.
     */
     var HomepageView = TemplateView.extend({
         templateName: '#home-template',
+        events: {
+            'click button.add': 'renderAddForm'
+        },
         initialize: function (options) {
             var self = this;
             /*
@@ -110,9 +157,7 @@
             */
             TemplateView.prototype.initialize.apply(this, arguments);
             app.collections.ready.done(function () {
-                var end = new Date();
-                end.setDate(end.getDate() + 7);
-                end = end.toISOString().replace(/T.*/g, '');
+                
                 app.sprints.fetch({
                     //data: {end_min: end},
                     /*
@@ -133,6 +178,17 @@
         */
         getContext: function () {
             return {sprints: app.sprints || null};
+        },
+        renderAddForm: function (event) {
+            var view = new NewSprintView(),
+                link = $(event.currentTarget);
+            event.preventDefault();
+            link.before(view.el);
+            link.hide();
+            view.render();
+            view.on('done', function () {
+                link.show();
+            });
         }    
     });
 

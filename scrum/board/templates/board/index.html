@@ -10,6 +10,18 @@
     <!-- http://necolas.github.io/normalize.css/ -->
     <link rel="stylesheet" href="{% static 'board/vendor/normalize.css' %}">
     <link rel="stylesheet" href="{% static 'board/css/board.css' %}">
+    <script type="text/html" id="new-sprint-template">
+        <form action="" method="post">
+            <label for="id_name">Sprint Name</label>
+            <input id="id_name" type="text" name="name" maxlength="100" required />
+            <label for="id_end">End Date</label>
+            <input id="id_end" type="date" name="end" />
+            <label for="id_description">Description</label>
+            <textarea id="id_description" name="description" cols="50"></textarea>
+            <button class="cancel">Cancel</button>
+            <button type="submit">Create</button>
+        </form>
+    </script>
     <script type="text/html" id="header-template">
         <span class="title">Scrum Board Example</span>
         <% if (authenticated ) { %>
