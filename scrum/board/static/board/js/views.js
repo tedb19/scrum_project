@@ -138,6 +138,31 @@
         }
     });
 
+    var SprintView = TemplateView.extend({
+        templateName: '#sprint-template',
+        initialize: function (options) {
+            var self = this;
+            TemplateView.prototype.initialize.apply(this, arguments);
+            this.sprintId = options.sprintId;
+            this.sprint = null;
+            app.collections.ready.done(function () {
+                /*
+                * app.sprints.push will put a new model 
+                * instance into the client-site collection.
+                */
+                self.sprint = app.sprints.push({id: self.sprintId});
+                self.sprint.fetch({
+                    success: function () {
+                        self.render();
+                    }
+                });
+            });
+        },
+        getContext: function () {
+            return {sprint: this.sprint};
+        }
+    })
+
     /*
     * Both the HomepageView and LoginView now extend 
     * from the base TemplateView, which cleans up 
@@ -251,5 +276,6 @@
     app.views.HomepageView = HomepageView;
     app.views.LoginView = LoginView;
     app.views.HeaderView = HeaderView;
+    app.views.SprintView = SprintView;
 
 })(jQuery, Backbone, _, app);
