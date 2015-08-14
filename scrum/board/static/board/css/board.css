@@ -96,3 +96,9 @@ color: #FFF;
 .sprints a.sprint span {
 font-size: 10px;
 }
+/* New Sprint 
+============== */
+.new-sprint {
+border: 1px solid #CCC;
+padding: 20px;
+}

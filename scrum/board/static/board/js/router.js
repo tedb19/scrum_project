@@ -2,7 +2,8 @@
     var AppRouter = Backbone.Router.extend({
         //This is where we define our routes for the application.
         routes: {
-            '': 'home'
+            '': 'home',
+            'sprint/:id': 'sprint'
         },
         /*
         * This is where we reference the ID selector where
@@ -21,6 +22,13 @@
         },
         home: function () {
             var view = new app.views.HomepageView({el: this.contentElement});
+            this.render(view);
+        },
+        sprint: function (id) {
+            var view = new app.views.SprintView({
+                el: this.contentElement,
+                sprintId: id
+            });
             this.render(view);
         },
         /*
